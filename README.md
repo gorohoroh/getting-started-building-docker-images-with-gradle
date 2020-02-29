@@ -131,7 +131,7 @@ task buildImage(type: DockerBuildImage) {
 Make sure you have Docker running on your machine, and then execute the task:
 
 ```shell
-❯ ./gradlew buildImage
+❯ gradlew buildImage
 ```
 
 This task will take outputs of the tasks we created earlier, and create a local Docker image. To verify that the image has been created, run the following Docker command:
@@ -144,7 +144,7 @@ If all went well, you should see an entry describing the new image at the top of
 
 ![A Docker image has been created](img/terminal_docker_image_created.png)
 
-## Create container
+## Create and start a container
 Now that we have an image, we can create an actual container based on that image.
 
 First, let's define the name for our container as a local variable: we'll need to use it from more than a single task. Near the top of the build file, just before the `repositories` extension, add this line:
@@ -153,21 +153,59 @@ First, let's define the name for our container as a local variable: we'll need t
 def ourContainerName = "ournewcontainer"
 ```
 
-Add the following task:
+Now, if we start a container, and the container using the same name is already running, Docker will return an error.
+
+Because of that, we should:
+* Create task `stopContainer`;
+* Create task `removeContainer` that depends on `stopContainer`;
+* Create task `createContainer` that depends on `removeContainer`;
+* Create task `startContainer` that depends on `createContainer`.
+
+Tasks `stopContainer` and `removeContainer` will additionally need to suppress non-critical exceptions.
+
+As a result, every time we want to start a container, Gradle will first make sure to:
+* Check if a container using the same name is already running;
+* If it is running, stop and remove the container.
+* Create and run a new container.
+
+
+Add the following tasks to the end of `build.gradle`:
 
 ```gradle
+task stopContainer(type: DockerStopContainer) {
+    targetContainerId("$ourContainerName")
+    onError { exception -> handleError(exception) }
+}
+
+task removeContainer(type: DockerRemoveContainer) {
+    dependsOn stopContainer
+    targetContainerId("$ourContainerName")
+    onError { exception -> handleError(exception) }
+}
+
 task createContainer(type: DockerCreateContainer) {
-    dependsOn buildImage
+    dependsOn buildImage, removeContainer
     targetImageId buildImage.getImageId()
-    containerName = "ournewcontainer"
+    containerName = "$ourContainerName"
     hostConfig.portBindings = ['8080:8080']
+}
+
+task startContainer(type: DockerStartContainer) {
+    dependsOn createContainer
+    targetContainerId("$ourContainerName")
+}
+
+private void handleError(Throwable exc) {
+    if (exc.message != null && !exc.message.contains('NotModifiedException')) {
+        throw new RuntimeException(exc)
+    }
 }
 ```
 
-Execute the task:
+First, let's create a container and see if this works as expected:
 
 ```shell
-❯ ./gradlew createContainer
+❯ gradlew createContainer
 ```
 
 To verify that a container has been created, run the following command in the terminal:
@@ -180,58 +218,28 @@ You should see an entry describing the new container at the top of the list of a
 
 ![A Docker container has been created](img/terminal_docker_container_created.png)
 
-## Start container
+Now, let's go all the way and start the container:
 
-If we start container and the container using the same name is already running, this won't work.
-
-Because of that, we should:
-* Create task `stopContainer`;
-* Create task `removeContainer` that depends on `stopContainer`;
-* Modify task `createContainer` to depend on `removeContainer`.
-
-Tasks `stopContainer` and `removeContainer` will additionally need to suppress non-critical exceptions.
-
-As a result, every time we want to start a container, Gradle will first make sure to:
-* Check if a container using the same name is already running;
-* If it is running, stop and remove the container.
-
-```gradle
-task stopContainer(type: DockerStopContainer) {
-    targetContainerId("$ourContainerName")
-    onError { exception -> handleError(exception) }
-
-}
-
-task removeContainer(type: DockerRemoveContainer, group: dockerGroupName) {
-    dependsOn stopContainer
-    targetContainerId("$ourContainerName")
-    onError { exception -> handleError(exception) }
-
-}
-
-...
-
-task startContainer(type: DockerStartContainer) {
-    dependsOn createContainer
-    targetContainerId("$ourContainerName")
-}
-
-private void handleError(Throwable exc) {
-    if (exc.message != null && !exc.message.contains('NotModifiedException')) {
-        throw new RuntimeException(exc)
-    }
-}
-
+```shell
+❯ gradlew startContainer
 ```
 
-Modify `createContainer` to depend on `removeContainer':
+Did the container start? Let's find out:
 
-```gradle
-task createContainer(type: DockerCreateContainer) {
-- dependsOn buildImage
-+ dependsOn buildImage, removeContainer
+```shell
+❯ docker container ls --all
 ```
 
-Move `createContainer` to be the penultimate task in `build.gradle`.
+In the command output, you should see an entry indicating that the container has just been created, and is running:
 
-(Alternatively, merge "Create container" and "Start container" to suggest all tasks in one listing.)
+![A Docker container is now running](img/terminal_docker_container_created_running.png)
+
+Let's see if we can connect to our application running in the local container. Run the following command in the terminal:
+
+```shell
+❯ curl http://localhost:8080/hello
+```
+
+If the below is what you see in the output, then you are connected to the application running in a local Docker container!
+
+![Containerized application responds](img/terminal_docker_curl.png)
