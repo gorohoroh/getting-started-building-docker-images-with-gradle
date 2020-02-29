@@ -196,7 +196,9 @@ task startContainer(type: DockerStartContainer) {
 }
 
 private void handleError(Throwable exc) {
-    if (exc.message != null && !exc.message.contains('NotModifiedException')) {
+    if (exc.message != null && 
+        !exc.message.contains('NotModifiedException') && 
+        !exc.message.contains('No such container')) {
         throw new RuntimeException(exc)
     }
 }
