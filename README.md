@@ -62,7 +62,6 @@ plugins {
 }
 ```
 
-## Import image and container types
 As you will be using types from Gradle Docker plugin that we have just applied, add these import statements after the `plugins` section in `build.gradle`:
 
 ```gradle
@@ -116,7 +115,7 @@ task syncJar(type: Copy) {
 ```
 
 ## Set Java compilation options to match image specifications
-When we use our generated `Dockerfile` to build an image, it will use JRE 8 as a runtime environment. In order to successfully run our application in this environment, let's make sure we generate Java classes compatible with Java 8. Add the following code to `build.gradle`: 
+Based on `Dockerfile` instructions, our image will use JRE 8 as runtime environment. In order to successfully run our application in this environment, let's make sure we generate Java classes compatible with Java 8. Add the following code to `build.gradle`: 
 
 ```gradle
 compileJava {
@@ -170,7 +169,7 @@ Now, if we start a container, and the container that uses the same name is alrea
 Tasks `stopContainer` and `removeContainer` will additionally need to suppress non-critical exceptions.
 
 As a result, every time we want to start a container, Gradle will first make sure to:
-* Check if a container using the same name is already running.
+* Check if a container using the same name is already running;
 * If it is running, stop and remove the container;
 * Create and run a new container.
 
