@@ -20,7 +20,7 @@ If cloning is not an option, [download the sample application](tuneit-gradle-doc
 
 Open the sample application in your text editor or IDE of choice. At this point, the `build.gradle` file should look  like this:
 
-```
+```gradle
 plugins {
     id 'java'
     id 'application'
@@ -53,7 +53,7 @@ jar {
 ## Apply the Gradle Docker plugin
 Add the `docker-spring-boot-application` (or remote-api?) plugin to the `plugins` section of your build script file: 
 
-```
+```gradle
 plugins {
     id 'java'
     id 'application'
@@ -65,7 +65,7 @@ plugins {
 ## Import image and container types
 As you will be using types from Gradle Docker plugin that we have just applied, add these import statements after the `plugins` section:
 
-```
+```gradle
 import com.bmuschko.gradle.docker.tasks.image.*
 import com.bmuschko.gradle.docker.tasks.container.*
 ```
@@ -73,7 +73,7 @@ import com.bmuschko.gradle.docker.tasks.container.*
 ## Create a task to generate a Dockerfile
 In order for Docker to know how to configure your image, it needs a file called `Dockerfile`. Let's create a Gradle task that generates the file:
 
-```
+```gradle
 task createDockerFile(type: Dockerfile) {
     from 'openjdk:8-jre-alpine'
     copyFile jar.archiveFileName.get(), '/app/test_service.jar'
@@ -85,7 +85,7 @@ task createDockerFile(type: Dockerfile) {
 
 When you execute this task, Gradle creates a `Dockerfile` under `build/docker`:
 
-```
+```dockerfile
 FROM openjdk:8-jre-alpine
 COPY tuneit-gradle-docker-1.0.jar /app/test_service.jar
 ENTRYPOINT ["java"]
@@ -98,7 +98,7 @@ TODO elaborate on these instructions.
 ## Copy jar to docker build dir
 When we build our Docker image, it will need to contain a JAR file with our application and all its dependencies. To make this file available, create a task that copies the assembled JAR file into `build/docker`:
 
-```
+```gradle
 task syncJar(type: Copy) {
     dependsOn assemble
     from jar.destinationDirectory
@@ -110,7 +110,7 @@ task syncJar(type: Copy) {
 ## Set Java compilation options to match base image specs
 When we use our generated `Dockerfile` to build an image, it will be based on a distribution that uses JRE 8 as a runtime environment. In order to successfully run our application in this environment, let's make sure we generate Java classes compatible with Java 8:
 
-```
+```gradle
 compileJava {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
@@ -119,7 +119,8 @@ compileJava {
 
 ## Build image
 We are now ready to build our Docker image. To do this, add the following task:
-```
+
+```gradle
 task buildImage(type: DockerBuildImage) {
     dependsOn createDockerFile, syncJar
     inputDir = createDockerFile.getDestDir()
@@ -129,13 +130,13 @@ task buildImage(type: DockerBuildImage) {
 
 Make sure you have Docker running on your machine, and then execute the task:
 
-```
+```shell
 ❯ ./gradlew buildImage
 ```
 
 This task will take outputs of the tasks we created earlier, and create a local Docker image. To verify that the image has been created, run the following Docker command:
 
-```
+```shell
 ❯ docker images
 ```
 
@@ -148,13 +149,13 @@ Now that we have an image, we can create an actual container based on that image
 
 First, let's define the name for our container as a local variable: we'll need to use it from more than a single task. Near the top of the build file, just before the `repositories` extension, add this line:
 
-```
+```gradle
 def ourContainerName = "ournewcontainer"
 ```
 
 Add the following task:
 
-```
+```gradle
 task createContainer(type: DockerCreateContainer) {
     dependsOn buildImage
     targetImageId buildImage.getImageId()
@@ -165,13 +166,13 @@ task createContainer(type: DockerCreateContainer) {
 
 Execute the task:
 
-```
+```shell
 ❯ ./gradlew createContainer
 ```
 
 To verify that a container has been created, run the following command in the terminal:
 
-```
+```shell
 ❯ docker container ls --all
 ```
 
