@@ -139,6 +139,10 @@ This task will take outputs of the tasks we created earlier, and create a local 
 docker images
 ```
 
+If all went well, you should see an entry describing the new image at the top of the list of available images:
+
+![A Docker image has been created](img/terminal_docker_image_created.png)
+
 
 ## Remove image
 
@@ -149,6 +153,3 @@ docker images
 ## Stop container
 
 ## Remove container
-<!--stackedit_data:
-eyJoaXN0b3J5IjpbMTM0MDk1NDQ1Ml19
--->
