@@ -5,7 +5,7 @@ This guide demonstrates how you can use Gradle and the [Gradle Docker plugin](ht
 We won't be creating a new Java application here: instead, we'll take a pre-made trivial Spring Boot application and containerize it.
 
 ## What you'll need
-* About 20 (?) minutes
+* About 20 minutes
 * A text editor or IDE
 * A terminal application
 * JDK 8 or later
@@ -16,9 +16,9 @@ You do not need to install Gradle separately: the sample Spring Boot application
 ## Get a sample Java application
 To get a sample Spring Boot application to containerize, [clone this repository](https://github.com/gorohoroh/tuneit-gradle-docker) from GitHub.
 
-If cloning is not an option, [download the sample application](tuneit-gradle-docker-master.zip) in an archived form, and unpack the archive.
+If cloning is not an option, [download the sample application](https://github.com/gorohoroh/tuneit-gradle-docker/archive/master.zip) in an archived form, and unpack the archive.
 
-Open the sample application in your text editor or IDE of choice. At this point, the `build.gradle` file should look  like this:
+Open the sample application in your text editor or IDE of choice. At this point, the `build.gradle` file should look like this:
 
 ```gradle
 plugins {
@@ -51,19 +51,19 @@ jar {
 ```
  
 ## Apply the Gradle Docker plugin
-Add the `docker-spring-boot-application` (or remote-api?) plugin to the `plugins` section of your build script file: 
+Add the `docker-spring-boot-application` plugin to the `plugins` section of your `build.gradle` file: 
 
 ```gradle
 plugins {
     id 'java'
     id 'application'
     id 'org.springframework.boot' version '2.2.5.RELEASE'
-    id 'com.bmuschko.docker-spring-boot-application' version '6.1.4'
++   id 'com.bmuschko.docker-spring-boot-application' version '6.1.4'
 }
 ```
 
 ## Import image and container types
-As you will be using types from Gradle Docker plugin that we have just applied, add these import statements after the `plugins` section:
+As you will be using types from Gradle Docker plugin that we have just applied, add these import statements after the `plugins` section in `build.gradle`:
 
 ```gradle
 import com.bmuschko.gradle.docker.tasks.image.*
@@ -71,7 +71,7 @@ import com.bmuschko.gradle.docker.tasks.container.*
 ```
 
 ## Create a task to generate a Dockerfile
-In order for Docker to know how to configure your image, it needs a file called `Dockerfile`. Let's create a Gradle task that generates the file:
+In order for Docker to know how to configure your image, it needs a file called `Dockerfile`, and we'll generate it using Gradle. Add the following Gradle task to the end of `build.gradle`:
 
 ```gradle
 task createDockerFile(type: Dockerfile) {
@@ -83,7 +83,15 @@ task createDockerFile(type: Dockerfile) {
 }
 ```
 
-When you execute this task, Gradle creates a `Dockerfile` under `build/docker`:
+To execute this task, open a terminal application, navigate to the project's home directory, and enter the following command:
+
+```shell
+❯ gradlew buildImage
+```
+
+*(Note: depending on your terminal settings, you may need to enter `.\gradlew` instead of `gradlew`.)*
+
+When you execute this task, Gradle creates a `Dockerfile` in the `build/docker` directory of the sample project:
 
 ```dockerfile
 FROM openjdk:8-jre-alpine
@@ -93,10 +101,10 @@ CMD ["-jar", "/app/test_service.jar"]
 EXPOSE 8080
 ```
 
-TODO elaborate on these instructions.
+Based on these instructions, Docker will be able to create your image based on another image, `openjdk:8-jre-alpine`, copy a JAR file from your output directory to the new image, prepare the Java runtime to run your application and set it to listen on port 8080.  
 
-## Copy jar to docker build dir
-When we build our Docker image, it will need to contain a JAR file with our application and all its dependencies. To make this file available, create a task that copies the assembled JAR file into `build/docker`:
+## Copy JAR file to Docker build directory
+When we get to build our Docker image, it will need to contain a JAR file with our application and all its dependencies. To make this file available, add a task that copies the assembled JAR file into `build/docker`:
 
 ```gradle
 task syncJar(type: Copy) {
@@ -107,8 +115,8 @@ task syncJar(type: Copy) {
 
 ```
 
-## Set Java compilation options to match base image specs
-When we use our generated `Dockerfile` to build an image, it will be based on a distribution that uses JRE 8 as a runtime environment. In order to successfully run our application in this environment, let's make sure we generate Java classes compatible with Java 8:
+## Set Java compilation options to match image specifications
+When we use our generated `Dockerfile` to build an image, it will use JRE 8 as a runtime environment. In order to successfully run our application in this environment, let's make sure we generate Java classes compatible with Java 8. Add the following code to `build.gradle`: 
 
 ```gradle
 compileJava {
@@ -117,8 +125,8 @@ compileJava {
 }
 ``` 
 
-## Build image
-We are now ready to build our Docker image. To do this, add the following task:
+## Build a Docker image
+We are now ready to build our Docker image. To do this, add the following task to `build.gradle`:
 
 ```gradle
 task buildImage(type: DockerBuildImage) {
@@ -128,7 +136,7 @@ task buildImage(type: DockerBuildImage) {
 }
 ```
 
-Make sure you have Docker running on your machine, and then execute the task:
+Make sure that Docker Desktop is running on your machine, then execute this task:
 
 ```shell
 ❯ gradlew buildImage
@@ -147,15 +155,13 @@ If all went well, you should see an entry describing the new image at the top of
 ## Create and start a container
 Now that we have an image, we can create an actual container based on that image.
 
-First, let's define the name for our container as a local variable: we'll need to use it from more than a single task. Near the top of the build file, just before the `repositories` extension, add this line:
+First, let's define the name for our container as a local variable: we'll need to use it from more than a single task. Near the top of the build file, just before the `repositories` extension object, add this line:
 
 ```gradle
 def ourContainerName = "ournewcontainer"
 ```
 
-Now, if we start a container, and the container using the same name is already running, Docker will return an error.
-
-Because of that, we should:
+Now, if we start a container, and the container that uses the same name is already running, Docker will return an error. To prevent this, we should:
 * Create task `stopContainer`;
 * Create task `removeContainer` that depends on `stopContainer`;
 * Create task `createContainer` that depends on `removeContainer`;
@@ -164,12 +170,11 @@ Because of that, we should:
 Tasks `stopContainer` and `removeContainer` will additionally need to suppress non-critical exceptions.
 
 As a result, every time we want to start a container, Gradle will first make sure to:
-* Check if a container using the same name is already running;
-* If it is running, stop and remove the container.
+* Check if a container using the same name is already running.
+* If it is running, stop and remove the container;
 * Create and run a new container.
 
-
-Add the following tasks to the end of `build.gradle`:
+Add the following tasks and an error handling method to the end of `build.gradle`:
 
 ```gradle
 task stopContainer(type: DockerStopContainer) {
