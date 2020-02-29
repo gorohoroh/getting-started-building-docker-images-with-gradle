@@ -181,3 +181,44 @@ You should see an entry describing the new container at the top of the list of a
 
 ## Start container
 
+If we start container and the container using the same name is already running, this won't work.
+
+Because of that, we should:
+* Create task `stopContainer`;
+* Create task `removeContainer` that depends on `stopContainer`;
+* Modify task `createContainer` to depend on `removeContainer`.
+
+As a result, every time we want to start a container, Gradle will first make sure to:
+* Check if a container using the same name is already running;
+* If it is running, stop and remove the container.
+
+```gradle
+task stopContainer(type: DockerStopContainer) {
+    targetContainerId("$ourContainerName")
+}
+
+task removeContainer(type: DockerRemoveContainer, group: dockerGroupName) {
+    dependsOn stopContainer
+    targetContainerId("$ourContainerName")
+}
+
+...
+
+task startContainer(type: DockerStartContainer) {
+    dependsOn createContainer
+    targetContainerId("$ourContainerName")
+}
+
+```
+
+Modify `createContainer` to depend on `removeContainer':
+
+```gradle
+task createContainer(type: DockerCreateContainer) {
+- dependsOn buildImage
++ dependsOn buildImage, removeContainer
+```
+
+Move `createContainer` to be the penultimate task in `build.gradle`.
+
+(Alternatively, merge "Create container" and "Start container" to suggest all tasks in one listing.)
