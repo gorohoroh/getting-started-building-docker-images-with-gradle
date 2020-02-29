@@ -70,7 +70,7 @@ import com.bmuschko.gradle.docker.tasks.container.*
 ```
 
 ## Create a task to generate a Dockerfile
-In order for Docker to know how to configure your image, it needs a file called `Dockerfile`, and we'll generate it using Gradle. Add the following Gradle task to the end of `build.gradle`:
+To configure your image, Docker needs a file called `Dockerfile`, and we'll generate it using Gradle. Add the following Gradle task to the end of `build.gradle`:
 
 ```gradle
 task createDockerFile(type: Dockerfile) {
@@ -100,7 +100,7 @@ CMD ["-jar", "/app/test_service.jar"]
 EXPOSE 8080
 ```
 
-Based on these instructions, Docker will be able to create your image based on another image, `openjdk:8-jre-alpine`, copy a JAR file from your output directory to the new image, prepare the Java runtime to run your application and set it to listen on port 8080.  
+Based on these instructions, Docker will be able to create your image from another image, `openjdk:8-jre-alpine`, copy a JAR file from your output directory to the new image, prepare the Java runtime to run your application, and set it to listen on port 8080.  
 
 ## Copy JAR file to Docker build directory
 When we get to build our Docker image, it will need to contain a JAR file with our application and all its dependencies. To make this file available, add a task that copies the assembled JAR file into `build/docker`:
@@ -115,7 +115,7 @@ task syncJar(type: Copy) {
 ```
 
 ## Set Java compilation options to match image specifications
-Based on `Dockerfile` instructions, our image will use JRE 8 as runtime environment. In order to successfully run our application in this environment, let's make sure we generate Java classes compatible with Java 8. Add the following code to `build.gradle`: 
+Based on `Dockerfile` instructions, our image will use JRE 8 as the runtime environment. To successfully run our application in this environment, let's make sure we generate Java classes compatible with Java 8. Add the following code to `build.gradle`: 
 
 ```gradle
 compileJava {
@@ -141,7 +141,7 @@ Make sure that Docker Desktop is running on your machine, then execute this task
 ❯ gradlew buildImage
 ```
 
-This task will take outputs of the tasks we created earlier, and create a local Docker image. To verify that the image has been created, run the following Docker command:
+This task will take outputs of the tasks we added earlier, and create a local Docker image. To verify that the image has been created, run the following Docker command:
 
 ```shell
 ❯ docker images
@@ -240,7 +240,7 @@ In the command output, you should see an entry indicating that the container has
 
 ![A Docker container is now running](img/terminal_docker_container_created_running.png)
 
-Let's see if we can connect to our application running in the local container. Run the following command in the terminal:
+Let's see if we can connect to our application running in the local container. Enter the following command in the terminal:
 
 ```shell
 ❯ curl http://localhost:8080/hello
