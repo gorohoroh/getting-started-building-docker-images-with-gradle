@@ -136,20 +136,48 @@ Make sure you have Docker running on your machine, and then execute the task:
 This task will take outputs of the tasks we created earlier, and create a local Docker image. To verify that the image has been created, run the following Docker command:
 
 ```
-docker images
+❯ docker images
 ```
 
 If all went well, you should see an entry describing the new image at the top of the list of available images:
 
 ![A Docker image has been created](img/terminal_docker_image_created.png)
 
-
-## Remove image
-
 ## Create container
+Now that we have an image, we can create an actual container based on that image.
+
+First, let's define the name for our container as a local variable: we'll need to use it from more than a single task. Near the top of the build file, just before the `repositories` extension, add this line:
+
+```
+def ourContainerName = "ournewcontainer"
+```
+
+Add the following task:
+
+```
+task createContainer(type: DockerCreateContainer) {
+    dependsOn buildImage
+    targetImageId buildImage.getImageId()
+    containerName = "ournewcontainer"
+    hostConfig.portBindings = ['8080:8080']
+}
+```
+
+Execute the task:
+
+```
+❯ ./gradlew createContainer
+```
+
+To verify that a container has been created, run the following command in the terminal:
+
+```
+❯ docker container ls --all
+```
+
+You should see an entry describing the new container at the top of the list of available images:
+
+![A Docker container has been created](img/terminal_docker_container_created.png)
 
 ## Start container
 
-## Stop container
-
-## Remove container
