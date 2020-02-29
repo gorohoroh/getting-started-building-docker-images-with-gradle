@@ -189,6 +189,8 @@ Because of that, we should:
 * Create task `removeContainer` that depends on `stopContainer`;
 * Modify task `createContainer` to depend on `removeContainer`.
 
+Tasks `stopContainer` and `removeContainer` will additionally need to suppress non-critical exceptions.
+
 As a result, every time we want to start a container, Gradle will first make sure to:
 * Check if a container using the same name is already running;
 * If it is running, stop and remove the container.
@@ -196,11 +198,15 @@ As a result, every time we want to start a container, Gradle will first make sur
 ```gradle
 task stopContainer(type: DockerStopContainer) {
     targetContainerId("$ourContainerName")
+    onError { exception -> handleError(exception) }
+
 }
 
 task removeContainer(type: DockerRemoveContainer, group: dockerGroupName) {
     dependsOn stopContainer
     targetContainerId("$ourContainerName")
+    onError { exception -> handleError(exception) }
+
 }
 
 ...
@@ -208,6 +214,12 @@ task removeContainer(type: DockerRemoveContainer, group: dockerGroupName) {
 task startContainer(type: DockerStartContainer) {
     dependsOn createContainer
     targetContainerId("$ourContainerName")
+}
+
+private void handleError(Throwable exc) {
+    if (exc.message != null && !exc.message.contains('NotModifiedException')) {
+        throw new RuntimeException(exc)
+    }
 }
 
 ```
