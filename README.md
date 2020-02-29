@@ -243,3 +243,22 @@ Let's see if we can connect to our application running in the local container. R
 If the below is what you see in the output, then you are connected to the application running in a local Docker container!
 
 ![Containerized application responds](img/terminal_docker_curl.png)
+
+Take some time to celebrate, you have earned it!
+
+When you're done, you can stop and remove the container if you don't need it for the time being:
+
+```shell
+❯ gradlew removeContainer
+```
+
+## Next steps
+Congratulations! You have defined a Docker image, created and started a container based on that image, and connected to a running containerized application. Gradle and the [Gradle Docker plugin](https://github.com/bmuschko/gradle-docker-plugin) helped you go through this challenge.
+
+If you want to learn more about using Gradle and Docker together, here's your recommended reading:
+* [Gradle Docker Plugin User Guide & Examples](https://bmuschko.github.io/gradle-docker-plugin/)
+* [Docker with Gradle: Dockerizing a Spring Boot application](https://bmuschko.com/blog/dockerized-spring-boot-app/)
+* [Dockerizing a Spring Boot with Gradle only](https://lazystone.github.io/programming/gradle/docker/travis/2018/02/17/gradle-docker.html)
+* [Building Java Docker images with Gradle and Docker multistage builds](http://paulbakker.io/java/docker-gradle-multistage/)
+* [Java Example with Gradle and Docker. Create Docker images for Spring/Gradle](https://codefresh.io/docs/docs/learn-by-example/java/gradle/)
+* [How to build Docker images with Gradle](https://blog.container-solutions.com/how-to-build-docker-images-with-gradle)
