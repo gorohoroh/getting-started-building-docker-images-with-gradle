@@ -85,7 +85,7 @@ task createDockerFile(type: Dockerfile) {
 To execute this task, open a terminal application, navigate to the project's home directory, and enter the following command:
 
 ```shell
-❯ gradlew buildImage
+❯ gradlew createDockerFile
 ```
 
 *(Note: depending on your terminal settings, you may need to enter `.\gradlew` instead of `gradlew`.)*
@@ -103,7 +103,7 @@ EXPOSE 8080
 Based on these instructions, Docker will be able to create your image from another image, `openjdk:8-jre-alpine`, copy a JAR file from your output directory to the new image, prepare the Java runtime to run your application, and set it to listen on port 8080.  
 
 ## Copy JAR file to Docker build directory
-When we get to build our Docker image, it will need to contain a JAR file with our application and all its dependencies. To make this file available, add a task that copies the assembled JAR file into `build/docker`:
+When we get to build our Docker image, it will need to contain a JAR file with our application and all its dependencies. To make this file available, we need a task that copies the assembled JAR file into `build/docker`. Let's add this task to `build.gradle`:
 
 ```gradle
 task syncJar(type: Copy) {
